@@ -1,0 +1,151 @@
+#include <list>
+#include <fstream>
+#include "weylstr.h"
+#include "weight.h"
+
+//Change globals.h (and RANK and PRIME), mMax, and mFilename to generated different results.
+
+//const int mMax[] = {3,2,3};
+//const int mMax[] = {3,3,3,3}; //n=5,p=5
+//const int mMax[] = {4,4,4,4,4}; //n=6,p=6
+//const int mMax[] = {5,5,4,5,5}; //n=6,p=7
+//const int mMax[] = {5,5,5,5,5,5}; //n=7,p=7
+//const int mMax[] = {5,6,6,6,6,6,5}; //n=8,p=8
+const int mMax[] = {6,7,7,7,7,7,7,6}; //n=9,p=9
+const Weight& mMaxWeight = Weight(mMax);
+const Weight& mMaxRoot = ConvertToRootNotation(mMaxWeight);
+const Weight mZero;
+const char mFilename[] = "graph-9,9.film";
+//(p-2,p-2,...,p-2,p-2) if RANK is odd
+//(p-2,...,p-2,p-3,p-2,...,p-2) if RANK is even
+
+class Entry
+{
+public:
+	Entry(const WeylStr aWeylStr, const Weight aWeight, int aIndex) : mWeylStr(aWeylStr), mWeight(aWeight) 
+	{
+		mIndex = aIndex;
+		for(int i = 0; i < RANK; i++)
+			mEdges[i] = 0;
+	}
+	WeylStr mWeylStr;
+	Weight mWeight;
+	int mEdges[RANK];
+	int mIndex;
+};
+
+bool isDominantAndLimited(const Weight& aTest)
+{
+	return (mZero <= aTest && aTest <= mMaxRoot);	
+}
+
+int main()
+{
+	list<Entry*> tFinalList;
+	list<Entry*> tWeightList;
+
+	const Weight rho(alpharootarray[0]);
+	ofstream mFile(mFilename);
+	//int tTest[] = { 3 , 7 , 2 , 7 , 3 };
+	//const Weight tWeight = ConvertToRootNotation(Weight(tTest));
+
+	WeylStr tStartString(w0array);
+	Entry* tStart = new Entry(tStartString,tStartString.DotOn((-2)*rho),1);
+	for(int i = 0; i < RANK; i++)
+		tStart->mEdges[i] = 1;
+	tWeightList.push_back(tStart);
+	tFinalList.push_back(tStart);
+
+	while(!tWeightList.empty())
+	{
+		const WeylStr& tString = tWeightList.front()->mWeylStr;
+		const Weight& tCurrentWeight = tWeightList.front()->mWeight;
+		const Weight& tCurrentRoot = ConvertToRootNotation(tCurrentWeight);
+
+		if(tFinalList.size() % 100 == 0)
+			cout << tCurrentWeight << '\n';
+
+		for(int i = 0; i < RANK; i++)
+		{
+			WeylStr tNew(tString);
+			tNew.Append_S(i+1);
+			const Weight& tNewWeight = tNew.DotOn((-2)*rho);
+			const Weight& tNewRoot = ConvertToRootNotation(tNewWeight);
+			if (isDominantAndLimited(tNewRoot))
+			{
+				bool tContains = false;
+				int tIndex;
+				for(list<Entry*>::const_iterator tIter = tFinalList.begin(); tIter != tFinalList.end(); tIter++)
+					if((*tIter)->mWeight == tNewWeight)
+					{
+						tContains = true;
+						tIndex = (*tIter)->mIndex;
+						break;
+					}
+				if(tContains)
+				{
+					tWeightList.front()->mEdges[i] = tIndex;
+					continue;
+				}
+
+				if (tCurrentRoot < tNewRoot)
+				{
+					tWeightList.front()->mEdges[i] = tFinalList.size() + 1; //Note not off by one since edges are not zero-valued;
+					Entry* tEntry = new Entry(tNew,tNewWeight,tFinalList.size() + 1);
+					tFinalList.push_back(tEntry);
+					tWeightList.push_back(tEntry);
+				}
+				else
+					tWeightList.front()->mEdges[i] = tWeightList.front()->mIndex;
+
+			}
+		}
+
+		tWeightList.pop_front();
+	}
+
+	cout << "Done with 1." << endl;
+
+	//Final cull. Example of something cut: ( 3 , 7 , 2 , 7 , 3 )
+	int i = -1;
+	for(list<Entry*>::const_iterator tIter = tFinalList.begin(); tIter != tFinalList.end(); ++tIter)
+		if((*tIter)->mWeight == mMaxWeight)
+		{
+			i = (*tIter)->mWeylStr.GetLength();
+			break;
+		}
+
+
+	cout << "Done with 2." << endl;
+
+	if(i >= 0)
+	{
+		while(tFinalList.back()->mWeylStr.GetLength() > i)
+			tFinalList.pop_back();
+
+		int tMaxIndex = tFinalList.size(); //Not zero-valued.
+
+		for(list<Entry*>::const_iterator tIter = tFinalList.begin(); tIter != tFinalList.end(); ++tIter)
+			for(int i = 0; i < RANK; i++)
+				if((*tIter)->mEdges[i] > tMaxIndex)
+					(*tIter)->mEdges[i] = 0;
+	}
+
+	cout << "Going to output." << endl;
+
+	for(list<Entry*>::const_iterator tIter = tFinalList.begin(); tIter != tFinalList.end(); tIter++)
+		mFile << (*tIter)->mWeight << '\n';
+
+	for(list<Entry*>::const_iterator tIter = tFinalList.begin(); tIter != tFinalList.end(); tIter++)
+		mFile << (*tIter)->mWeylStr.GetLength() << '\n';
+	
+	for(list<Entry*>::const_iterator tIter = tFinalList.begin(); tIter != tFinalList.end(); tIter++)
+	{
+		mFile << (*tIter)->mEdges[0];
+		for(int i = 1; i < RANK; i++)
+			mFile << ' ' << (*tIter)->mEdges[i];
+		mFile << '\n';
+	}
+
+	mFile.close();
+}

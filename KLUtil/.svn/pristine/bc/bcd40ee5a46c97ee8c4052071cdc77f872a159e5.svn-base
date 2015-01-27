@@ -1,0 +1,53 @@
+#include <iostream>
+#include <fstream>
+#include <assert.h>
+#include <vector>
+
+using namespace std;
+
+#ifndef GLOBALVAR_H
+#define GLOBALVAR_H
+
+//these all need to be changed for change in RANK
+
+const int PRIME = 5; //7
+const int RANK = 5; //7
+const int MAX_WEYL_S_STR = 22; // ?
+const int MAX_POLY_LENGTH = 2*MAX_WEYL_S_STR+1; // ? //THIS MUST BE AN ODD NUMBER!!!
+const int MAX_Mu_NUM = 62; // ?
+
+const int w0Length = (RANK*(RANK-1))/2;
+const char GraphFileName[13] = "graph-5.fil";
+const int w0array[MAX_WEYL_S_STR] =
+{1,2,1,3,4,3,2,3,1,2,
+0,0,0,0,0,0,0,0,0,0,
+0,0}; 
+
+const int alpharootarray[RANK][RANK-1] = { //Straightforward to change.
+{1,1,1,1}, //Used for rho (half sum of all roots).
+{2,-1,0,0},
+{-1,2,-1,0},
+{0,-1,2,-1},
+{0,0,-1,2}};  //For rank change, change alphas in weight.cpp (Not sure what this means?)
+
+const int InverseMatrixForWeightToRootConversion[RANK-1][RANK-1] = { //Straightforward to change.
+{4,3,2,1},
+{3,6,4,2},
+{2,4,6,3},
+{1,2,3,4}};
+
+//A note is needed on InverseMatrixForWeightToRootConversion.
+//For RANK = 5, the matrix for root to weight conversion is just
+//  2 -1  0  0
+// -1  2 -1  0    = ROOTtoWEIGHT
+//  0 -1  2 -1
+//  0  0 -1  2
+// and the inverse matrix for weight to root conversion is just that
+// HOWEVER, MULTIPLY BY THE DET OF ROOTtoWEIGHT to get integers
+// note: det of ROOtoWEIGHT is always RANK, so no entry needed for that
+
+const int TopRootArray[RANK-1] = {8,12,12,8}; //Leave for now.
+const int TopRootPowers[RANK-1] = {1521,117,9,1}; //Leave for now.
+
+
+#endif
